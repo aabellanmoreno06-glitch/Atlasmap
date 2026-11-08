@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#101318">
+  <title>My Travel Atlas</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <style>
+    :root{--bg:#101318;--panel:#191e26;--panel2:#202733;--line:#303946;--text:#edf1f5;--muted:#9ba7b5;--orange:#f08a45;--blue:#56a8ed;--gray:#b9c1ca}
+    *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif}
+    button,input,select{font:inherit}button{cursor:pointer}.app{min-height:100vh;display:grid;grid-template-columns:245px 1fr}
+    aside{background:#141920;border-right:1px solid var(--line);padding:25px 17px;display:flex;flex-direction:column;gap:25px}
+    .brand{display:flex;align-items:center;gap:11px;padding:0 8px}.brandmark{width:36px;height:36px;border-radius:12px;background:linear-gradient(135deg,#f5a15e,#d96c32);display:grid;place-items:center;color:#17191c;font-weight:900}
+    .brand strong{display:block;font-size:16px;letter-spacing:.2px}.brand small{color:var(--muted);font-size:11px}
+    nav{display:grid;gap:6px}.nav{padding:11px 12px;border-radius:10px;color:#b5bfcb;background:transparent;border:0;text-align:left}.nav.active,.nav:hover{background:#252d38;color:white}
+    .side-note{margin-top:auto;padding:13px;border:1px solid var(--line);border-radius:12px;color:var(--muted);font-size:12px}
+    main{min-width:0;padding:26px 30px 36px}.top{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:22px}
+    h1{font-size:26px;margin:0 0 4px;letter-spacing:-.6px}.sub{color:var(--muted);font-size:13px}
+    .actions{display:flex;gap:8px;flex-wrap:wrap}.btn{border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:9px;padding:9px 13px}.btn.primary{background:var(--orange);border-color:var(--orange);color:#17191c;font-weight:700}
+    .stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:16px}.stat{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:15px}.stat span{color:var(--muted);font-size:12px}.stat strong{display:block;font-size:25px;margin-top:5px}
+    .map-wrap{background:var(--panel);border:1px solid var(--line);border-radius:15px;overflow:hidden}.map-head{padding:13px 15px;display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+    .legend{display:flex;gap:14px;flex-wrap:wrap;color:var(--muted);font-size:12px}.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}.dot.visited{background:var(--orange)}.dot.wish{background:var(--blue)}.dot.empty{background:var(--gray)}
+    #map{height:min(66vh,690px);min-height:430px;background:#111923}
+    .toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.toolbar input,.toolbar select{background:#111720;color:var(--text);border:1px solid var(--line);border-radius:8px;padding:9px 11px;outline:none}.toolbar input{min-width:230px}
+    .content{display:none}.content.active{display:block}.list-panel{background:var(--panel);border:1px solid var(--line);border-radius:13px;overflow:hidden}
+    .list-row{display:flex;align-items:center;justify-content:space-between;padding:13px 15px;border-bottom:1px solid var(--line);gap:12px}.list-row:last-child{border:0}.place-meta{color:var(--muted);font-size:12px}.pill{font-size:11px;padding:4px 8px;border-radius:20px;background:#303946}.pill.visited{color:#ffb17c;background:#553622}.pill.wishlist{color:#8bc8ff;background:#1d405b}
+    .empty{padding:28px;text-align:center;color:var(--muted)}.search-results{position:absolute;z-index:1000;background:#202733;border:1px solid var(--line);border-radius:10px;width:min(430px,calc(100vw - 40px));max-height:300px;overflow:auto;display:none;box-shadow:0 14px 35px #0008}.search-results button{display:block;width:100%;text-align:left;padding:10px 12px;border:0;border-bottom:1px solid var(--line);background:transparent;color:var(--text)}.search-results button:hover{background:#303946}
+    .search-area{position:relative}.muted{color:var(--muted)}.section-title{font-size:17px;margin:0 0 12px}.profile-card{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:20px;max-width:680px}
+    .profile-card p{color:var(--muted)}.profile-card input{width:100%;max-width:400px;background:#111720;color:var(--text);border:1px solid var(--line);border-radius:8px;padding:10px;margin:7px 0 14px}
+    .leaflet-popup-content-wrapper,.leaflet-popup-tip{background:#202733;color:var(--text)}.leaflet-popup-content{margin:12px}.popup-title{font-weight:700;margin-bottom:4px}.popup-actions{display:flex;gap:6px;margin-top:10px}.popup-actions button{border:1px solid #465364;border-radius:7px;padding:6px 8px;background:#2d3744;color:white;font-size:11px}.popup-actions .v{background:#674126}.popup-actions .w{background:#214968}
+    @media(max-width:850px){.app{grid-template-columns:1fr}aside{padding:13px 15px;border-right:0;border-bottom:1px solid var(--line);gap:12px}.brand{padding:0 3px}nav{display:flex;overflow:auto}.nav{white-space:nowrap;padding:9px 11px}.side-note{display:none}main{padding:20px 15px}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.top{flex-direction:column}#map{height:62vh;min-height:380px}}
+  </style>
+</head>
+<body>
+<div class="app">
+  <aside>
+    <div class="brand"><div class="brandmark">✦</div><div><strong>My Travel Atlas</strong><small>YOUR PERSONAL WORLD</small></div></div>
+    <nav>
+      <button class="nav active" data-page="atlas">◉ &nbsp; Mi mapamundi</button>
+      <button class="nav" data-page="destinations">⌖ &nbsp; Mis destinos</button>
+      <button class="nav" data-page="stats">▥ &nbsp; Estadísticas</button>
+      <button class="nav" data-page="profile">☻ &nbsp; Mi perfil</button>
+      <button class="nav" data-page="data">⇅ &nbsp; Mis datos</button>
+    </nav>
+    <div class="side-note">Tu atlas es privado. Los cambios se guardan en este navegador. Exporta una copia para tener una copia de seguridad.</div>
+  </aside>
+  <main>
+    <section id="atlas" class="content active">
+      <div class="top"><div><h1>Mi mapamundi</h1><div class="sub">Todos tus viajes, en un solo lugar.</div></div>
+        <div class="actions"><button class="btn" id="exportTop">↓ Exportar</button><button class="btn primary" id="addTop">＋ Añadir destino</button></div>
+      </div>
+      <div class="stats">
+        <div class="stat"><span>Países visitados</span><strong id="countriesVisited">0</strong></div>
+        <div class="stat"><span>Ciudades visitadas</span><strong id="citiesVisited">0</strong></div>
+        <div class="stat"><span>En wishlist</span><strong id="wishlistCount">0</strong></div>
+        <div class="stat"><span>Continentes explorados</span><strong id="continentsCount">0</strong></div>
+      </div>
+      <div class="map-wrap">
+        <div class="map-head"><div class="legend"><span><i class="dot visited"></i>Visitado</span><span><i class="dot wish"></i>Wishlist</span><span><i class="dot empty"></i>Sin registrar</span></div>
+          <div class="toolbar search-area"><input id="search" placeholder="Busca un país o una ciudad…"><div id="results" class="search-results"></div></div>
+        </div>
+        <div id="map"></div>
+      </div>
+    </section>
+    <section id="destinations" class="content">
+      <div class="top"><div><h1>Mis destinos</h1><div class="sub">Tus países y ciudades guardados.</div></div><button class="btn primary" id="addList">＋ Añadir destino</button></div>
+      <div class="toolbar" style="margin-bottom:13px"><input id="listSearch" placeholder="Filtrar destinos…"><select id="listFilter"><option value="all">Todos</option><option value="visited">Visitados</option><option value="wishlist">Wishlist</option></select></div>
+      <div id="destinationList" class="list-panel"></div>
+    </section>
+    <section id="stats" class="content">
+      <div class="top"><div><h1>Estadísticas</h1><div class="sub">Un resumen de tu historial viajero.</div></div></div>
+      <div class="stats">
+        <div class="stat"><span>Países visitados</span><strong id="sCountries">0</strong></div><div class="stat"><span>Ciudades visitadas</span><strong id="sCities">0</strong></div>
+        <div class="stat"><span>Destinos guardados</span><strong id="sTotal">0</strong></div><div class="stat"><span>Continentes</span><strong id="sContinents">0</strong></div>
+      </div>
+      <div class="profile-card"><h3 class="section-title">Continentes visitados</h3><div id="continentBreakdown" class="muted">Todavía no hay destinos registrados.</div></div>
+    </section>
+    <section id="profile" class="content">
+      <div class="top"><div><h1>Mi perfil</h1><div class="sub">Personaliza tu pequeño rincón viajero.</div></div></div>
+      <div class="profile-card"><label class="muted" for="travellerName">Nombre o apodo</label><br><input id="travellerName" placeholder="¿Cómo te llamas?"><br><button class="btn primary" id="saveProfile">Guardar perfil</button><p id="profileSaved"></p></div>
+    </section>
+    <section id="data" class="content">
+      <div class="top"><div><h1>Mis datos</h1><div class="sub">Haz copias de seguridad o recupera tu atlas.</div></div></div>
+      <div class="profile-card"><h3 class="section-title">Exportar atlas</h3><p>Descarga tus destinos y perfil en un archivo JSON.</p><button class="btn primary" id="exportBtn">↓ Descargar copia</button><hr style="border-color:var(--line);margin:22px 0"><h3 class="section-title">Importar atlas</h3><p>Importa un archivo JSON exportado previamente. Reemplazará los datos actuales.</p><input type="file" id="importFile" accept="application/json"><br><button class="btn" id="importBtn">Importar archivo</button><p id="dataMessage"></p></div>
+    </section>
+  </main>
+</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+(() => {
+  const STORAGE_KEY = 'my-travel-atlas-v1';
+  const CONTINENTS = {AF:'África',AS:'Asia',EU:'Europa',NA:'Norteamérica',SA:'Sudamérica',OC:'Oceanía',AN:'Antártida'};
+  let state = loadState(), map, countryLayer, cityLayer = L.layerGroup();
+  let features = [], countryByA2 = {};
+  const $ = id => document.getElementById(id);
+  function loadState(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {places:{},profile:{name:''}}}catch{return {places:{},profile:{name:''}}}}
+  function persist(){localStorage.setItem(STORAGE_KEY,JSON.stringify(state));renderAll()}
+  function norm(s){return (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim()}
+  function countryId(code,name){return code ? 'country:'+code.toUpperCase() : 'country-name:'+norm(name)}
+  function placeFromResult(r){
+    const a=r.address||{}, isCountry=r.type==='country'||r.class==='boundary'&&r.type==='administrative'&&r.addresstype==='country';
+    if(isCountry){
+      const code=(a.country_code||'').toUpperCase();
+      const feat=countryByA2[code];
+      return {id:countryId(code||'',r.name||a.country),name:r.name||a.country,kind:'country',status:'wishlist',continent:feat?.continent||'',lat:+r.lat,lon:+r.lon,code};
+    }
+    const city=r.name||a.city||a.town||a.village||a.municipality||'Lugar';
+    const country=a.country||'';
+    return {id:'city:'+r.osm_type+':'+r.osm_id,name:city,kind:'city',status:'wishlist',country,continent:'',lat:+r.lat,lon:+r.lon,osm_id:r.osm_id,osm_type:r.osm_type};
+  }
+  function initMap(){
+    map=L.map('map',{worldCopyJump:true}).setView([22,8],2);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{attribution:'&copy; OpenStreetMap &copy; CARTO',subdomains:'abcd',maxZoom:19}).addTo(map);
+    cityLayer.addTo(map);
+    fetch('https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson')
+      .then(r=>r.json()).then(g=>{
+        features=g.features||[];
+        features.forEach(f=>{
+          const p=f.properties||{}, code=(p.ISO_A2||p.ISO_A2_EH||'').toUpperCase();
+          if(code && code!=='-99') countryByA2[code]={feature:f,continent:p.CONTINENT||''};
+        });
+        countryLayer=L.geoJSON(g,{style:styleCountry,onEachFeature:(f,l)=>{
+          const p=f.properties||{}, code=(p.ISO_A2||p.ISO_A2_EH||'').toUpperCase(), name=p.ADMIN||p.name||p.NAME||'País';
+          const id=countryId(code,name);
+          l.bindPopup(countryPopup(id,name,code,p.CONTINENT||''));
+          l.on('mouseover',e=>e.target.setStyle({weight:1.8,color:'#f3f4f6'}));
+          l.on('mouseout',e=>countryLayer.resetStyle(e.target));
+        }}).addTo(map);
+        refreshMap();
+      }).catch(()=>{console.warn('No se pudo cargar la capa de países')});
+    setTimeout(()=>map.invalidateSize(),250);
+  }
+  function getStatus(id){return state.places[id]?.status||''}
+  function styleCountry(f){
+    const p=f.properties||{}, code=(p.ISO_A2||p.ISO_A2_EH||'').toUpperCase(), name=p.ADMIN||p.name||p.NAME||'';
+    const id=countryId(code,name), status=getStatus(id);
+    return {color:'#647180',weight:.55,fillColor:status==='visited'?'#f08a45':status==='wishlist'?'#56a8ed':'#b9c1ca',fillOpacity:status?0.78:0.12};
+  }
+  function countryPopup(id,name,code,continent){
+    const status=getStatus(id), label=status==='visited'?'Visitado':status==='wishlist'?'Wishlist':'Sin registrar';
+    return `<div class="popup-title">${escapeHtml(name)}</div><div style="font-size:11px;color:#aab5c2">${label}</div><div class="popup-actions"><button class="v" data-action="status" data-id="${id}" data-status="visited" data-name="${escapeAttr(name)}" data-kind="country" data-code="${code}" data-continent="${escapeAttr(continent)}">Visitado</button><button class="w" data-action="status" data-id="${id}" data-status="wishlist" data-name="${escapeAttr(name)}" data-kind="country" data-code="${code}" data-continent="${escapeAttr(continent)}">Wishlist</button><button data-action="remove" data-id="${id}">Quitar</button></div>`;
+  }
+  function escapeHtml(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+  function escapeAttr(s){return escapeHtml(s).replace(/"/g,'&quot;')}
+  function refreshMap(){
+    if(countryLayer)countryLayer.setStyle(styleCountry);
+    cityLayer.clearLayers();
+    Object.values(state.places).filter(p=>p.kind==='city').forEach(p=>{
+      const color=p.status==='visited'?'#f08a45':'#56a8ed';
+      L.circleMarker([p.lat,p.lon],{radius:7,color:'#101318',weight:1.5,fillColor:color,fillOpacity:1}).bindPopup(
+        `<div class="popup-title">${escapeHtml(p.name)}</div><div style="font-size:11px;color:#aab5c2">${escapeHtml(p.country||'')} · ${p.status==='visited'?'Visitado':'Wishlist'}</div><div class="popup-actions"><button class="v" data-action="status" data-id="${p.id}" data-status="visited">Visitado</button><button class="w" data-action="status" data-id="${p.id}" data-status="wishlist">Wishlist</button><button data-action="remove" data-id="${p.id}">Quitar</button></div>`
+      ).addTo(cityLayer);
+    });
+  }
+  function setStatus(place,status){state.places[place.id]={...(state.places[place.id]||{}),...place,status};persist()}
+  function totals(){
+    const ps=Object.values(state.places), visited=ps.filter(p=>p.status==='visited');
+    const countries=visited.filter(p=>p.kind==='country').length,cities=visited.filter(p=>p.kind==='city').length;
+    const continents=new Set(visited.map(p=>p.continent).filter(Boolean));
+    return {ps,visited,countries,cities,continents};
+  }
+  function renderAll(){
+    const t=totals();
+    $('countriesVisited').textContent=t.countries;$('citiesVisited').textContent=t.cities;$('wishlistCount').textContent=t.ps.filter(p=>p.status==='wishlist').length;$('continentsCount').textContent=t.continents.size;
+    $('sCountries').textContent=t.countries;$('sCities').textContent=t.cities;$('sTotal').textContent=t.ps.length;$('sContinents').textContent=t.continents.size;
+    $('continentBreakdown').innerHTML=t.continents.size?[...t.continents].map(c=>`<div style="padding:7px 0;border-bottom:1px solid var(--line)">${escapeHtml(CONTINENTS[c]||c)} <span style="float:right">${t.visited.filter(p=>p.continent===c).length} destino(s)</span></div>`).join(''):'Todavía no hay destinos registrados.';
+    $('travellerName').value=state.profile.name||'';
+    renderList();if(map)refreshMap();
+  }
+  function renderList(){
+    const q=norm($('listSearch').value), filter=$('listFilter').value;
+    const items=Object.values(state.places).filter(p=>(filter==='all'||p.status===filter)&&norm(p.name+' '+(p.country||'')).includes(q)).sort((a,b)=>a.name.localeCompare(b.name));
+    $('destinationList').innerHTML=items.length?items.map(p=>`<div class="list-row"><div><strong>${escapeHtml(p.name)}</strong><div class="place-meta">${p.kind==='country'?'País':'Ciudad'}${p.country?' · '+escapeHtml(p.country):''}</div></div><div style="display:flex;align-items:center;gap:9px"><span class="pill ${p.status}">${p.status==='visited'?'Visitado':'Wishlist'}</span><button class="btn" data-list-remove="${p.id}">Quitar</button></div></div>`).join(''):'<div class="empty">Aún no tienes destinos aquí. Busca un país o una ciudad en el mapamundi para añadirlo.</div>';
+  }
+  async function searchPlaces(q){
+    const box=$('results');box.style.display='block';box.innerHTML='<div class="empty">Buscando…</div>';
+    try{
+      const url='https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&namedetails=1&limit=8&q='+encodeURIComponent(q);
+      const r=await fetch(url,{headers:{'Accept-Language':'es'}});
+      const results=await r.json();
+      box.innerHTML='';
+      if(!results.length){box.innerHTML='<div class="empty">No se encontraron resultados.</div>';return}
+      results.forEach(item=>{
+        const p=placeFromResult(item), btn=document.createElement('button');
+        btn.innerHTML=`<strong>${escapeHtml(p.name)}</strong><br><small style="color:#aab5c2">${p.kind==='country'?'País':(p.country||'Ciudad')}</small>`;
+        btn.onclick=()=>{if(p.kind==='country'&&!p.id.includes('name:')){const f=countryByA2[p.code];if(f?.feature){const b=L.geoJSON(f.feature).getBounds();if(b.isValid())map.fitBounds(b,{maxZoom:5})}}else if(p.lat&&p.lon)map.setView([p.lat,p.lon],p.kind==='city'?9:4);setStatus(p,'wishlist');box.style.display='none';$('search').value='';};
+        box.appendChild(btn);
+      });
+    }catch{box.innerHTML='<div class="empty">No se pudo completar la búsqueda. Inténtalo de nuevo.</div>'}
+  }
+  function addDestination(){ $('search').focus();$('search').scrollIntoView({behavior:'smooth',block:'center'}); }
+  document.querySelectorAll('.nav').forEach(b=>b.addEventListener('click',()=>{
+    document.querySelectorAll('.nav').forEach(x=>x.classList.toggle('active',x===b));
+    document.querySelectorAll('.content').forEach(x=>x.classList.toggle('active',x.id===b.dataset.page));
+    if(b.dataset.page==='atlas')setTimeout(()=>map.invalidateSize(),80);
+  }));
+  $('search').addEventListener('input',e=>{clearTimeout(window.searchTimer);if(e.target.value.trim().length>2)window.searchTimer=setTimeout(()=>searchPlaces(e.target.value.trim()),450);else $('results').style.display='none'});
+  document.addEventListener('click',e=>{
+    const a=e.target.closest('[data-action]');
+    if(a){
+      const id=a.dataset.id;
+      if(a.dataset.action==='remove'){delete state.places[id];persist();if(map)map.closePopup();return}
+      if(a.dataset.action==='status'){
+        const existing=state.places[id]||{id,name:a.dataset.name||'Destino',kind:a.dataset.kind||'city',code:a.dataset.code||'',continent:a.dataset.continent||''};
+        setStatus(existing,a.dataset.status);if(map)map.closePopup();return;
+      }
+    }
+    const rm=e.target.closest('[data-list-remove]');if(rm){delete state.places[rm.dataset.listRemove];persist()}
+    if(!e.target.closest('.search-area'))$('results').style.display='none';
+  });
+  $('listSearch').addEventListener('input',renderList);$('listFilter').addEventListener('change',renderList);
+  $('addTop').onclick=addDestination;$('addList').onclick=()=>{document.querySelector('[data-page="atlas"]').click();addDestination()};
+  function exportData(){const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='my-travel-atlas-backup.json';a.click();URL.revokeObjectURL(url)}
+  $('exportBtn').onclick=exportData;$('exportTop').onclick=exportData;
+  $('saveProfile').onclick=()=>{state.profile.name=$('travellerName').value.trim();localStorage.setItem(STORAGE_KEY,JSON.stringify(state));$('profileSaved').textContent='Perfil guardado.'};
+  $('importBtn').onclick=async()=>{const f=$('importFile').files[0];if(!f){$('dataMessage').textContent='Selecciona primero un archivo.';return}try{const imported=JSON.parse(await f.text());if(!imported.places||typeof imported.places!=='object')throw Error();state=imported;persist();$('dataMessage').textContent='Atlas importado correctamente.'}catch{$('dataMessage').textContent='El archivo no parece ser una copia válida de My Travel Atlas.'}};
+  initMap();renderAll();
+})();
+</script>
+</body>
+</html>
